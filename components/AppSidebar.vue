@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { SidebarProps } from "@/components/ui/sidebar";
-
 import {
   AudioWaveform,
   BookOpen,
@@ -13,6 +11,8 @@ import {
   Settings2,
   SquareTerminal,
 } from "lucide-vue-next";
+import type { SidebarProps } from "@/components/ui/sidebar";
+
 import NavMain from "@/components/NavMain.vue";
 import NavProjects from "@/components/NavProjects.vue";
 import NavUser from "@/components/NavUser.vue";
