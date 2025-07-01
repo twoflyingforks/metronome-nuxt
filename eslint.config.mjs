@@ -5,12 +5,11 @@ import withNuxt from './.nuxt/eslint.config.mjs';
 
 // const eslintPluginPrettierRecommended = require("eslint-plugin-prettier/recommended");
 
-export default withNuxt(
-  // {
-  //   rules: {
-  //     '@stylistic/semi': 'off',
-  //   },
-  // },
-  eslintConfigPrettier,
-);
+export default withNuxt(eslintConfigPrettier);
 // Your custom configs here
+
+// {
+//   rules: {
+//     '@stylistic/semi': 'off',
+//   },
+// },
