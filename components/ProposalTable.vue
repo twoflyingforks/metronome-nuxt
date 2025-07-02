@@ -30,16 +30,10 @@
       </div>
     </CardHeader>
     <CardContent>
-      <!-- 
-        The RadioGroup component wraps the entire table to manage the state 
-        of all radio buttons as a single group. The v-model is bound to 
-        our selectedProposalId state.
-      -->
       <RadioGroup v-model="selectedProposalId">
         <Table>
           <TableHeader>
             <TableRow>
-              <!-- A new header cell is added for the selector column. -->
               <TableHead class="w-[50px]"></TableHead>
               <TableHead class="w-[15%]">ID</TableHead>
               <TableHead class="w-[35%]">Short Title</TableHead>
@@ -50,7 +44,6 @@
             <!-- Loading State -->
             <template v-if="isLoading">
               <TableRow v-for="n in 3" :key="n">
-                <!-- Add a skeleton cell for the new column -->
                 <TableCell><Skeleton class="h-4 w-4 rounded-full" /></TableCell>
                 <TableCell><Skeleton class="h-6 w-full" /></TableCell>
                 <TableCell><Skeleton class="h-6 w-full" /></TableCell>
@@ -65,10 +58,6 @@
                 :key="proposal.id"
                 :data-state="selectedProposalId === proposal.id && 'selected'"
               >
-                <!-- 
-                  The new selector cell contains a RadioGroupItem. Its value is set to the
-                  proposal's ID, which links it to the RadioGroup's v-model.
-                -->
                 <TableCell>
                   <RadioGroupItem
                     :id="`r-${proposal.id}`"
@@ -84,7 +73,6 @@
             <!-- Empty State -->
             <template v-else>
               <TableRow>
-                <!-- The colspan is increased to 4 to account for the new column. -->
                 <TableCell :colspan="4" class="h-24 text-center">
                   No proposals found.
                 </TableCell>
@@ -97,20 +85,20 @@
   </Card>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue';
+<script setup lang="ts">
+// <-- Added lang="ts" here
+import { ref, onMounted, computed } from "vue";
 
-// Import newly required RadioGroup components
-import { RefreshCcw } from 'lucide-vue-next';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Button } from '@/components/ui/button';
+// Import UI components
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -118,32 +106,46 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
+import { RefreshCcw } from "lucide-vue-next";
 
-// --- STATE FOR SELECTION ---
-// This ref now serves as the v-model for the RadioGroup.
-const selectedProposalId = ref(null);
+// --- TYPES ---
+// Define a type for the proposal object for strong type safety.
+interface Proposal {
+  id: string | number;
+  long_title: string;
+  short_title: string;
+  original_title: string;
+}
 
-// The handleRowClick function is no longer needed as v-model handles the state.
-
-// --- DATA FETCHING LOGIC (Unchanged) ---
-
-const proposals = ref([]);
+// --- STATE ---
+// Provide explicit types for the reactive state.
+const selectedProposalId = ref<string | number | null>(null);
+const proposals = ref<Proposal[]>([]);
 const isLoading = ref(false);
+
+// --- COMPUTED PROPERTY FOR SELECTED PROPOSAL ---
+// TypeScript can now correctly infer the return type as ComputedRef<Proposal | undefined>
+const selectedProposal = computed(() => {
+  if (!selectedProposalId.value) return undefined;
+  return proposals.value.find((p) => p.id === selectedProposalId.value);
+});
+
+// --- DATA FETCHING ---
 const { $directus } = useNuxtApp();
 
 async function fetchProposals() {
   isLoading.value = true;
-  console.log('Fetching proposals...');
   try {
-    const data = await $directus.query(`
+    // The fetched data will be validated against the Proposal type.
+    const data = await $directus.query<{ proposals: Proposal[] }>(`
       query {
         proposals {
           id
@@ -153,13 +155,11 @@ async function fetchProposals() {
         }
       }
     `);
-    console.log('Proposals fetched successfully!');
     if (data) {
       proposals.value = data.proposals;
-      console.log('Proposals data updated!');
     }
   } catch (error) {
-    console.error('An error occurred while fetching proposals:', error);
+    console.error("An error occurred while fetching proposals:", error);
     proposals.value = [];
   } finally {
     isLoading.value = false;
@@ -169,8 +169,10 @@ async function fetchProposals() {
 onMounted(() => {
   fetchProposals();
 });
-</script>
 
-<style scoped>
-/* Scoped styles are generally not needed with shadcn-vue. */
-</style>
+// --- EXPOSE TO PARENT ---
+// The exposed property now has a correct type that the parent can understand.
+defineExpose({
+  selectedProposal,
+});
+</script>
