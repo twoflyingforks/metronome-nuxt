@@ -19,81 +19,18 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-// Import libraries for document generation
-// Make sure to install them: npm install docxtemplater pizzip file-saver
-import Docxtemplater from "docxtemplater";
-import PizZip from "pizzip";
-import { saveAs } from "file-saver";
+// The document generation logic is now auto-imported from the composable.
+const { generateConveyanceNote } = useDocumentGenerator();
 
 // Create a ref to hold the instance of the ProposalTable component
-// By providing a type, TypeScript knows what properties will be exposed on the ref's value.
 const proposalTableRef = ref<InstanceType<typeof ProposalTable> | null>(null);
 
 /**
- * Generates and downloads a .docx file based on a template and the selected proposal.
+ * A handler function that gets the selected data and calls the composable.
  */
-async function generateDocument() {
-  // Get the selected proposal from the child component's exposed properties
+function handleGenerateClick() {
   const selectedData = proposalTableRef.value?.selectedProposal;
-
-  if (!selectedData) {
-    // Using a non-blocking UI element for notifications is better than alert()
-    // For now, we'll keep the alert for simplicity.
-    alert("Please select a proposal first.");
-    return;
-  }
-
-  try {
-    // Step 1: Fetch the .docx template from the public folder
-    const response = await fetch("/conveyance-template.docx");
-    if (!response.ok) {
-      throw new Error(
-        "Template not found. Make sure 'conveyance-template.docx' is in your public/ directory.",
-      );
-    }
-    const templateBlob = await response.arrayBuffer();
-
-    // Step 2: Create a PizZip instance with the template content
-    const zip = new PizZip(templateBlob);
-
-    // Step 3: Create a docxtemplater instance
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-    });
-
-    // Step 4: Set the data to replace placeholders in the template
-    // Your .docx template should have placeholders like {id}, {short_title}, etc.
-    doc.setData({
-      id: selectedData.id,
-      short_title: selectedData.short_title,
-      long_title: selectedData.long_title,
-      original_title: selectedData.original_title,
-      // Add any other data you need in the template
-    });
-
-    // Step 5: Render the document with the data
-    doc.render();
-
-    // Step 6: Generate the output file as a blob
-    const out = doc.getZip().generate({
-      type: "blob",
-      mimeType:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    });
-
-    // Step 7: Trigger a download using file-saver
-    saveAs(out, `ConveyanceNote-${selectedData.id}.docx`);
-  } catch (error) {
-    // Type-safe error handling for the 'unknown' type.
-    console.error("Error generating document:", error);
-    let errorMessage =
-      "An unknown error occurred while generating the document.";
-    if (error instanceof Error) {
-      errorMessage = `An error occurred: ${error.message}`;
-    }
-    alert(errorMessage);
-  }
+  generateConveyanceNote(selectedData);
 }
 </script>
 
@@ -134,11 +71,13 @@ export const containerClass = "w-full h-full";
       <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
         <!-- Assign the ref to the component -->
         <ProposalTable ref="proposalTableRef" />
+
         <!-- Generate Document Button -->
-        <div class="flex items-center gap-2">
+        <div class="flex justify-end pt-4">
           <Button
             :disabled="!proposalTableRef?.selectedProposal"
-            @click="generateDocument"
+            class="cursor-pointer"
+            @click="handleGenerateClick"
           >
             Generate Conveyance Note
           </Button>
