@@ -1,6 +1,7 @@
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
-import { saveAs } from "file-saver";
+// import { saveAs } from "file-saver";
+import saveAs from "file-saver";
 
 // Define the shape of the data the generator expects.
 // This ensures type safety within the composable.
@@ -71,8 +72,8 @@ export const useDocumentGenerator = () => {
       const seconds = String(now.getSeconds()).padStart(2, "0");
 
       const datePart = `${year}-${month}-${day}`;
-      const timePart = `${hours}${minutes}${seconds}`;
-      const filename = `${datePart} Conveyance Note (${timePart}).docx`;
+      const timePart = `${hours}h${minutes}m${seconds}s`;
+      const filename = `${datePart} Conveyance Note_${timePart}.docx`;
 
       // Step 7: Trigger a download using file-saver
       saveAs(out, filename);
