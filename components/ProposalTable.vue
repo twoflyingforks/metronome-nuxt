@@ -41,7 +41,6 @@
             </TableRow>
           </TableHeader>
           <TableBody>
-            <!-- Loading State -->
             <template v-if="isLoading">
               <TableRow v-for="n in 3" :key="n">
                 <TableCell><Skeleton class="h-4 w-4 rounded-full" /></TableCell>
@@ -51,7 +50,6 @@
               </TableRow>
             </template>
 
-            <!-- Data Display -->
             <template v-else-if="proposals.length > 0">
               <TableRow
                 v-for="proposal in proposals"
@@ -70,7 +68,6 @@
               </TableRow>
             </template>
 
-            <!-- Empty State -->
             <template v-else>
               <TableRow>
                 <TableCell :colspan="4" class="h-24 text-center">
@@ -86,7 +83,6 @@
 </template>
 
 <script setup lang="ts">
-// <-- Added lang="ts" here
 import { ref, onMounted, computed } from "vue";
 
 // Import UI components
@@ -117,7 +113,6 @@ import {
 import { RefreshCcw } from "lucide-vue-next";
 
 // --- TYPES ---
-// Define a type for the proposal object for strong type safety.
 interface Proposal {
   id: string | number;
   long_title: string;
@@ -126,37 +121,34 @@ interface Proposal {
 }
 
 // --- STATE ---
-// Provide explicit types for the reactive state.
 const selectedProposalId = ref<string | number | null>(null);
 const proposals = ref<Proposal[]>([]);
 const isLoading = ref(false);
 
 // --- COMPUTED PROPERTY FOR SELECTED PROPOSAL ---
-// TypeScript can now correctly infer the return type as ComputedRef<Proposal | undefined>
 const selectedProposal = computed(() => {
   if (!selectedProposalId.value) return undefined;
   return proposals.value.find((p) => p.id === selectedProposalId.value);
 });
 
 // --- DATA FETCHING ---
-const { $directus } = useNuxtApp();
+const { $directus, $readItems } = useNuxtApp();
 
 async function fetchProposals() {
   isLoading.value = true;
   try {
-    // The fetched data will be validated against the Proposal type.
-    const data = await $directus.query<{ proposals: Proposal[] }>(`
-      query {
-        proposals {
-          id
-          long_title
-          short_title
-          original_title
-        }
-      }
-    `);
-    if (data) {
-      proposals.value = data.proposals;
+    // FIX: The options object should be passed as the second argument
+    // to the $readItems function, not chained after it.
+    const response = await $directus.request(
+      $readItems("proposals", {
+        fields: ["id", "long_title", "short_title", "original_title"],
+      }),
+    );
+
+    // The check for the response itself is sufficient.
+    // The Directus SDK returns the data directly.
+    if (response) {
+      proposals.value = response as Proposal[];
     }
   } catch (error) {
     console.error("An error occurred while fetching proposals:", error);
@@ -171,7 +163,6 @@ onMounted(() => {
 });
 
 // --- EXPOSE TO PARENT ---
-// The exposed property now has a correct type that the parent can understand.
 defineExpose({
   selectedProposal,
 });
